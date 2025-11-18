@@ -102,5 +102,74 @@ unsigned int takeItem(player& player, item& item)
 ```
 </div>
 
+## موضوعهای بعدی برای ادامه
+با استفاده از atomic ها میشه کارهای جالبی کرد که برنامه های multi-threaded از تمام قدرت CPU هایی که در اختیار ما و استفاده کننده‌های برنامه‌هامون هستش رو استفاده کنن.
+در این مقاله سعی کردم به صورت خلاصه و سریع، atomic ها رو توضیح بدم، اما این تازه شروع موضوع atomic هاست و استفاده های پیشرفته‌تر زیای وجود داره. چند مثال میزنم برای اینکه ایده ای داشته باشید برای ادامه دادن و اینکه دنبال چی باشید:
+#### MCMP
+به تابع ها و سیستمهایی گفته میشه که همزمان چند writer و چند reader را پشتیبانی میکنند. multi-consumer-multi-producer یا برعکس، multi-producer-multi-consumer (MPMC). نوشتن این سیستمها با mutex به راحتی قابل انجامه، اما خب باعث lock های زیادی میشه.
+#### lock
+اصطلاحیه که برای منتظر موندن یک thread با استفاده از دستورهای سیستم‌عامل استفاده میشه. مثلا مثال قبلی ای که زده بودم، `itemsMutex` وقتی به `std::lock_guard<std::mutex>` میرسه، اون پشتها با استفاده از atomic ها، چک میشه که الآن میشه جلو رقت یا خیر. اگه نشد، معمولا یکم spin-lock میکنن و بعد اگه هنوزم نمیشد پیش رفت، به OS میگن که thread رو بخوابونه. این کار خیلی گرون تموم میشه (بیدار کردن thread در ویندوز حدود ۱۰μs الی ۵۰ μs طول میکشه!) 
+#### spin-lock
+بعضی وقتها به دلیل گرون بودن lock، ترجیح میدیم که داخل یک حلقه `while` ساده منتظر یک `flag` یی باشیم. بهتره داخل این حلقه از دستورهای مخصوصی استفاده کنیم که به CPU بگه که thread ما داره وقت میکشه و میتونه آسون بگیره (باعث صرفه‌جویی مصرف برق و کنترل حرارت CPU میشه). برای هر سیستم فرق میکنه اما استانداردهایی هم وجود داره، این شروع خوبیه:
+
+<div dir="ltr">
+
+```cpp
+#if _MSC_VER && (_M_IX86 || _M_X64)
+#include <immintrin.h>
+#define relaxCpu() _mm_pause()
+#elif __i386__ || __x86_64__
+#include <xmmintrin.h>
+#define relaxCpu() _mm_pause()
+#elif __aarch64__ || __arm__
+#define relaxCpu() __yield()
+#else
+#define relaxCpu() std::this_thread::yield()
+#endif
+```
+</div>
+
+#### flag
+این رو با کد نشون بدیم راحت تره
+
+<div dir="ltr">
+
+```cpp
+cachelineOffset std::atomic_flag flag;
+void addItem(const item& item)
+{
+    while (flag.test_and_set())
+        relaxCpu();
+    player.items.push_back(item);
+    flag.clear();
+}
+
+```
+</div>
+
+#### wait
+مثل lock ولی spin-lock رو هم شامل میشه. یعنی کلا منتظر موندن یک thread، عملا هدر رفتن CPU.
+#### lock-free programming
+به برنامه نویسی ای گفته میشه که در اون از mutex و lock استفاده نمیشه. این کار باعث میشه که برنامه نویس بتونه از تمام قدرت CPU استفاده کنه و در عین حال، thread ها همدیگه رو block نکنن. این کار با استفاده از atomic ها انجام میشه و به صورت کلی، یک روش پیچیده تر برای نوشتن برنامه های multi-threaded هستش. نتیجه‌ش همچین چیزی میشه:
+<div dir="ltr">
+
+```cpp
+void addItem(const item& item)
+{
+    player.lockFreeItems.push_back(item);
+}
+
+void readItems()
+{
+    for (const auto& item : player.lockFreeItems)
+        std::invoke(onItemAdded, item);
+}
+```
+</div>
+
+به شکلی که هر دوی تابع ها میتونن همزمان اجرا بشن و کد هم ظاهرا و هم باطنن باعث lock شدن thread نمیشه. البته باعث نمیشه wait نداشته باشه!
+#### wait-free programming
+مثل lock-free ولی حتی wait هم نداره! این سختترین قسمت استفاده از atomic هاست و نتیجه‌ش میشه سیستمی که از تمام قدرت چند CPU همزمان استفاده میکنه و هیچ cycleیی هدر نمیره.
+
 </div>
 
