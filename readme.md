@@ -6,7 +6,7 @@
 
 ## در سخت‌افزار چه اتفاقی می‌افته؟
 
-<div dir="ltr">
+<div dir="ltr" style="direction: ltl; unicode-bidi: isolate;">
 
 ```cpp
 unsigned int takeItem(player& player, item& item)
@@ -33,7 +33,7 @@ unsigned int takeItem(player& player, item& item)
 ## عملهای atomic چه کار میکنند؟
 بصورت خلاصه، تضمین میکنن که دیتایی که در cacheline ادیت میشه، بین همه CPU در موقع نیاز، sync میشه. این برای برنامه هایی که از چند thread همزمان استفاده میکنن، قابلیت هایی از جمله mutex و lock-free programming رو ممکن میکنه.
 
-<div dir="ltr">
+<div dir="ltr" style="direction: ltl; unicode-bidi: isolate;">
 
 ```diff
 unsigned int takeItem(player& player, item& item)
@@ -53,7 +53,7 @@ unsigned int takeItem(player& player, item& item)
 
 در مثال بالا، چند thread همزمان میتونن از این تابع استفاده کنن بدون اینکه cacheline هاشون همزمان `items` رو ادیت کنه و باعث اختلال در عمکرد همدیگه بشن. (بدون mutex در مثال بالا، ممکنه دو thread همزمان `items` رو ادیت کنن بدون اینکه تغییرات همدیگه رو ببینن و در نهایت `items` داخل DRAM خراب بشه.)
 
-<div dir="ltr">
+<div dir="ltr" style="direction: ltl; unicode-bidi: isolate;">
 
 ```diff
 unsigned int takeItem(player& player, item& item)
@@ -82,7 +82,7 @@ unsigned int takeItem(player& player, item& item)
 مموری ای که برای atomic ها استفاده میشه، فرقی با مموری های دیگه نداره. این فقط ++C هستش که برای راحت تر کردن کار، متغییر رو طوری نشون میده که انگار خود متغییر خاص هستش. درواقع صرفا از دستورات مربوط به atomicity در assembly استفاده میشه برای استفاده از اون قسمت مموری. 
 این به این معنیه که مثل بقیه مموری ها در ++C، ممکنه بیشتر از یک متغییر در یک cacheline قرار بگیره. در مثال بالا، ممکنه `totalItemsAdded` و `totalSpecialItemsAdded` در یک cacheline قرار بگیرن و تغییر `totalItemsAdded` هر بار باعث sync شدن `totalSpecialItemsAdded` هم بشه. ممکنه نصف `totalItemsAdded` در یک cacheline باشه و نصف دیگش در یک cachline دیگه. برای جلوگیری از این مشکل، بهتره از `alignas` استفاده کنیم تا مطمئن بشیم هر کدوم از متغییر های atomic فقط یک cacheline منحصر بفرد داشته باشن.
 
-<div dir="ltr">
+<div dir="ltr" style="direction: ltl; unicode-bidi: isolate;">
 
 ```diff
 unsigned int takeItem(player& player, item& item)
@@ -115,7 +115,7 @@ unsigned int takeItem(player& player, item& item)
 #### spin-lock
 بعضی وقتها به دلیل گرون بودن lock، ترجیح میدیم که داخل یک حلقه `while` ساده منتظر یک `flag` یی باشیم. بهتره داخل این حلقه از دستورهای مخصوصی استفاده کنیم که به CPU بگه که thread ما داره وقت میکشه و میتونه آسون بگیره (باعث صرفه‌جویی مصرف برق و کنترل حرارت CPU میشه). برای هر سیستم فرق میکنه اما استانداردهایی هم وجود داره، این شروع خوبیه:
 
-<div dir="ltr">
+<div dir="ltr" style="direction: ltl; unicode-bidi: isolate;">
 
 ```cpp
 #if defined(_MSC_VER) && (defined(_M_IX86) || defined(_M_X64))
@@ -135,7 +135,7 @@ unsigned int takeItem(player& player, item& item)
 #### flag
 این رو با کد نشون بدیم راحت تره
 
-<div dir="ltr">
+<div dir="ltr" style="direction: ltl; unicode-bidi: isolate;">
 
 ```cpp
 // align to a cache line to avoid false sharing (requires <new>)
@@ -155,7 +155,7 @@ void addItem(const item& item)
 مثل lock ولی spin-lock رو هم شامل میشه. یعنی کلا منتظر موندن یک thread، عملا هدر رفتن CPU.
 #### lock-free programming
 به برنامه نویسی ای گفته میشه که در اون از mutex و lock استفاده نمیشه. این کار باعث میشه که برنامه نویس بتونه از تمام قدرت CPU استفاده کنه و در عین حال، thread ها همدیگه رو block نکنن. این کار با استفاده از atomic ها انجام میشه و به صورت کلی، یک روش پیچیده تر برای نوشتن برنامه های multi-threaded هستش. نتیجه‌ش همچین چیزی میشه:
-<div dir="ltr">
+<div dir="ltr" style="direction: ltl; unicode-bidi: isolate;">
 
 ```cpp
 void addItem(const item& item)
