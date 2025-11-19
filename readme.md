@@ -138,7 +138,6 @@ unsigned int takeItem(player& player, item& item)
 <div dir="ltr" style="direction: ltr; unicode-bidi: isolate;">
 
 ```cpp
-// align to a cache line to avoid false sharing (requires <new>)
 alignas(std::hardware_destructive_interference_size) std::atomic_flag flag{};
 void addItem(const item& item)
 {
